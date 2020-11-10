@@ -1,0 +1,36 @@
+substitutions:
+    _ENVIRONMENT: "production"
+    _SITE_URL: "gcs.gitdocs.dev"
+
+options:
+  logging: GCS_ONLY
+
+steps:
+- id: 'init submodules'
+  name: 'gcr.io/cloud-builders/git'
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    git submodule update --init --recursive
+
+- id: 'Generate HUGO site'
+  name: 'gcr.io/cloud-builders/docker'
+  args: ['run', '--rm', '-v', '/workspace:/src', 'klakegg/hugo:0.77.0-ext-alpine']
+
+#- id: 'validate workspace'
+#  name: gcr.io/cloud-builders/curl
+#  entrypoint: bash
+#  args:
+#    - "-c"
+#    - |
+      #ls -lah /workspace/public
+
+- id: 'Copy files to bucket'
+  name: 'gcr.io/cloud-builders/gsutil'
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    gsutil rsync -R /workspace/public gs://${_SITE_URL}
+    gsutil iam ch allUsers:objectViewer gs://${_SITE_URL}
