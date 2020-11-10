@@ -18,19 +18,12 @@ steps:
   name: 'gcr.io/cloud-builders/docker'
   args: ['run', '--rm', '-v', '/workspace:/src', 'klakegg/hugo:0.77.0-ext-alpine']
 
-#- id: 'validate workspace'
-#  name: gcr.io/cloud-builders/curl
-#  entrypoint: bash
-#  args:
-#    - "-c"
-#    - |
-      #ls -lah /workspace/public
-
 - id: 'Copy files to bucket'
   name: 'gcr.io/cloud-builders/gsutil'
   entrypoint: 'bash'
   args:
   - -c
   - |
-    gsutil rsync -R /workspace/public gs://${_SITE_URL}
+    gsutil -m rsync -R /workspace/public gs://${_SITE_URL}
     gsutil iam ch allUsers:objectViewer gs://${_SITE_URL}
+    gsutil web set -m index.html -e 404.html gs://${_SITE_URL}
