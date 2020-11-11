@@ -1,6 +1,8 @@
 substitutions:
+    _GH_REPO: "jimangel/docsy-gcs-buckets"
     _ENVIRONMENT: "production"
     _SITE_URL: "gcs.gitdocs.dev"
+    _STAGE_BUCKET_URL: "pr-${_PR_NUMBER}.gitdocs.dev"
 
 options:
   logging: GCS_ONLY
@@ -24,6 +26,25 @@ steps:
   args:
   - -c
   - |
-    gsutil -m rsync -R /workspace/public gs://${_SITE_URL}
-    gsutil iam ch allUsers:objectViewer gs://${_SITE_URL}
-    gsutil web set -m index.html -e 404.html gs://${_SITE_URL}
+    echo "Deploying $_ENVIRONMENT bucket"
+    case $_ENVIRONMENT in
+      production)
+        gsutil -m rsync -R /workspace/public gs://${_SITE_URL}
+        gsutil iam ch allUsers:objectViewer gs://${_SITE_URL}
+        gsutil web set -m index.html -e 404.html gs://${_SITE_URL}
+        ;;
+      staging)
+        gsutil mb -b on gs://${_STAGE_BUCKET_URL}
+        gsutil -m rsync -R /workspace/public gs://${_STAGE_BUCKET_URL}
+        gsutil iam ch allUsers:objectViewer gs://${_STAGE_BUCKET_URL}
+        gsutil web set -m index.html -e 404.html gs://${_STAGE_BUCKET_URL}
+        # delete after 30 days
+        echo "SEE WHAT'S HERE"
+        ls -lah
+        echo "MAYBE IT'S RELATIVE"
+        ls -lah /workspace/
+        gsutil lifecycle set /workspace/staging-gcs-lifecycle.json gs://${_STAGE_BUCKET_URL}
+        ;;
+      *)
+        echo "environment $_ENVIRONMENT not production or staging; ignored."
+    esac
