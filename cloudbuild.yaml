@@ -39,10 +39,6 @@ steps:
         gsutil iam ch allUsers:objectViewer gs://${_STAGE_BUCKET_URL}
         gsutil web set -m index.html -e 404.html gs://${_STAGE_BUCKET_URL}
         # delete after 30 days
-        echo "SEE WHAT'S HERE"
-        ls -lah
-        echo "MAYBE IT'S RELATIVE"
-        ls -lah /workspace/
         gsutil lifecycle set /workspace/staging-gcs-lifecycle.json gs://${_STAGE_BUCKET_URL}
         ;;
       *)
